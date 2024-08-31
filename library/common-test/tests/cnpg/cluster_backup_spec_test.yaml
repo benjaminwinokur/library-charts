@@ -335,7 +335,7 @@ tests:
                   secretAccessKey:
                     key: ACCESS_SECRET_KEY
                     name: test-release-name-common-test-cnpg-my-pg-provider-backup-s3-creds
-                serverName: some-server-name-r1
+                serverName: test-release-name-common-test-cnpg-my-pg
                 wal:
                   compression: gzip
                   encryption: AES256
