@@ -5,17 +5,30 @@ The gluetun sidecar container to be inserted.
 enabled: true
 imageSelector: openvpnImage
 probes:
-{{- if $.Values.addons.vpn.livenessProbe }}
-  liveness:
-  {{- toYaml . | nindent 2 }}
+{{- if and $.Values.addons.vpn.probes $.Values.addons.vpn.probes.liveness }}
+  {{- with $.Values.addons.vpn.probes }}
+    {{- . | toYaml | nindent 2 }}
+  {{- end -}}
 {{- else }}
   liveness:
     enabled: false
 {{- end }}
+{{- if and $.Values.addons.vpn.probes $.Values.addons.vpn.probes.readiness }}
+  {{- with $.Values.addons.vpn.probes }}
+    {{- . | toYaml | nindent 2 }}
+  {{- end -}}
+{{- else }}
   readiness:
     enabled: false
+{{- end }}
+{{- if and $.Values.addons.vpn.probes $.Values.addons.vpn.probes.startup }}
+  {{- with $.Values.addons.vpn.probes }}
+    {{- . | toYaml | nindent 2 }}
+  {{- end -}}
+{{- else }}
   startup:
     enabled: false
+{{- end }}
 resources:
   excludeExtra: true
 securityContext:

@@ -544,6 +544,107 @@ tests:
             hostPath:
               path: /path/to/folder
 
+
+  - it: addon vpn gluetun enabled with livenessProbe
+    set:
+      addons:
+        vpn:
+          type: gluetun
+          probes:
+            liveness:
+              type: exec
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+      workload: *workload
+      service:
+        main:
+          enabled: true
+          primary: true
+          ports:
+            main:
+              enabled: true
+              primary: true
+              port: 8080
+    asserts:
+      - hasDocuments:
+          count: 2
+      - documentIndex: &DeploymentDocument 0
+        isKind:
+          of: Deployment
+      - documentIndex: &ServiceDocument 1
+        isKind:
+          of: Service
+      - documentIndex: *DeploymentDocument
+        equal:
+          path: spec.template.spec.containers[0].name
+          value: test-release-name-common-test
+      - documentIndex: *DeploymentDocument
+        equal:
+          path: spec.template.spec.containers[1].name
+          value: test-release-name-common-test-vpn
+      - documentIndex: *DeploymentDocument
+        isSubset:
+          path: spec.template.spec.containers[1]
+          content:
+            livenessProbe:
+              exec:
+                command:
+                  - "/gluetun-entrypoint"
+                  - "healthcheck"
+              initialDelaySeconds: 12
+              failureThreshold: 5
+              successThreshold: 1
+              timeoutSeconds: 5
+              periodSeconds: 15
+
+  - it: addon vpn tailscale enabled with readiness probes
+    set:
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+      addons:
+        vpn:
+          type: tailscale
+          probes:
+            readiness:
+              type: exec
+              command:
+                - /bin/bash
+                - ls
+          env:
+            key: value
+            key1: value1
+      workload: *workload
+    asserts:
+      - hasDocuments:
+          count: 1
+      - documentIndex: &DeploymentDocument 0
+        isKind:
+          of: Deployment
+      - documentIndex: *DeploymentDocument
+        equal:
+          path: spec.template.spec.containers[0].name
+          value: test-release-name-common-test
+      - documentIndex: *DeploymentDocument
+        equal:
+          path: spec.template.spec.containers[1].name
+          value: test-release-name-common-test-tailscale
+      - documentIndex: *DeploymentDocument
+        isSubset:
+          path: spec.template.spec.containers[1]
+          content:
+            readinessProbe:
+              exec:
+                command:
+                  - "/bin/bash"
+                  - "ls"
+              failureThreshold: 4
+              initialDelaySeconds: 10
+              periodSeconds: 12
+              successThreshold: 2
+              timeoutSeconds: 5
+
   - it: tailscale addon enabled with authkey should pass
     set:
       resources:
