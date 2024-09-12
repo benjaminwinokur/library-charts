@@ -5,30 +5,18 @@ The gluetun sidecar container to be inserted.
 enabled: true
 imageSelector: openvpnImage
 probes:
-{{- if and $.Values.addons.vpn.probes $.Values.addons.vpn.probes.liveness }}
-  {{- with $.Values.addons.vpn.probes }}
-    {{- . | toYaml | nindent 2 }}
+  {{- if not $.Values.addons.vpn.probes -}}
+    {{- $_ := set $.Values.addons.vpn "probes" dict -}}
   {{- end -}}
-{{- else }}
+  {{- $livness := $.Values.addons.vpn.probes.liveness | default (dict "enabled" false) -}}
+  {{- $readiness := $.Values.addons.vpn.probes.readiness | default (dict "enabled" false) -}}
+  {{- $startup := $.Values.addons.vpn.probes.startup | default (dict "enabled" false) }}
   liveness:
-    enabled: false
-{{- end }}
-{{- if and $.Values.addons.vpn.probes $.Values.addons.vpn.probes.readiness }}
-  {{- with $.Values.addons.vpn.probes }}
-    {{- . | toYaml | nindent 2 }}
-  {{- end -}}
-{{- else }}
+    {{- $livness | toYaml | nindent 4 }}
   readiness:
-    enabled: false
-{{- end }}
-{{- if and $.Values.addons.vpn.probes $.Values.addons.vpn.probes.startup }}
-  {{- with $.Values.addons.vpn.probes }}
-    {{- . | toYaml | nindent 2 }}
-  {{- end -}}
-{{- else }}
+    {{- $readiness | toYaml | nindent 4 }}
   startup:
-    enabled: false
-{{- end }}
+    {{- $startup | toYaml | nindent 4 }}
 resources:
   excludeExtra: true
 securityContext:

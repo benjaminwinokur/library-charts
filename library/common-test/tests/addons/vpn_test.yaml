@@ -544,14 +544,18 @@ tests:
             hostPath:
               path: /path/to/folder
 
-
-  - it: addon vpn gluetun enabled with livenessProbe
+  - it: addon vpn gluetun enabled with livenessProbe and startupProbe but no readinessProbe
     set:
       addons:
         vpn:
           type: gluetun
           probes:
             liveness:
+              type: exec
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+            startup:
               type: exec
               command:
                 - /gluetun-entrypoint
@@ -584,19 +588,34 @@ tests:
           path: spec.template.spec.containers[1].name
           value: test-release-name-common-test-vpn
       - documentIndex: *DeploymentDocument
-        isSubset:
-          path: spec.template.spec.containers[1]
-          content:
-            livenessProbe:
-              exec:
-                command:
-                  - "/gluetun-entrypoint"
-                  - "healthcheck"
-              initialDelaySeconds: 12
-              failureThreshold: 5
-              successThreshold: 1
-              timeoutSeconds: 5
-              periodSeconds: 15
+        notExists:
+          path: spec.template.spec.containers[1].readinessProbe
+      - documentIndex: *DeploymentDocument
+        equal:
+          path: spec.template.spec.containers[1].startupProbe
+          value:
+            exec:
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+            initialDelaySeconds: 10
+            failureThreshold: 60
+            successThreshold: 1
+            timeoutSeconds: 3
+            periodSeconds: 5
+      - documentIndex: *DeploymentDocument
+        equal:
+          path: spec.template.spec.containers[1].livenessProbe
+          value:
+            exec:
+              command:
+                - "/gluetun-entrypoint"
+                - "healthcheck"
+            initialDelaySeconds: 12
+            failureThreshold: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+            periodSeconds: 15
 
   - it: addon vpn tailscale enabled with readiness probes
     set:
@@ -631,19 +650,24 @@ tests:
           path: spec.template.spec.containers[1].name
           value: test-release-name-common-test-tailscale
       - documentIndex: *DeploymentDocument
-        isSubset:
-          path: spec.template.spec.containers[1]
-          content:
-            readinessProbe:
-              exec:
-                command:
-                  - "/bin/bash"
-                  - "ls"
-              failureThreshold: 4
-              initialDelaySeconds: 10
-              periodSeconds: 12
-              successThreshold: 2
-              timeoutSeconds: 5
+        notExists:
+          path: spec.template.spec.containers[1].livenessProbe
+      - documentIndex: *DeploymentDocument
+        notExists:
+          path: spec.template.spec.containers[1].startupProbe
+      - documentIndex: *DeploymentDocument
+        equal:
+          path: spec.template.spec.containers[1].readinessProbe
+          value:
+            exec:
+              command:
+                - "/bin/bash"
+                - "ls"
+            failureThreshold: 4
+            initialDelaySeconds: 10
+            periodSeconds: 12
+            successThreshold: 2
+            timeoutSeconds: 5
 
   - it: tailscale addon enabled with authkey should pass
     set:
